@@ -16,9 +16,14 @@ import java.util.*;
  */
 public enum PermissionName {
 
-    ROLE_PERMISSIONS_GRANT("role:permissions:grant"),
+    ROLES_READ("roles:read"),
+    ROLES_CREATE("roles:create"),
+    ROLES_DELETE("roles:delete"),
+    ROLES_PERMISSIONS_UPDATE("roles:permissions:update"),
 
-    USER_PERMISSIONS_GRANT("user:permissions:grant"),
+    USER_ROLES_ASSIGN("user:roles:assign"),
+    USER_ROLES_REVOKE("user:roles:revoke"),
+
     USER_READ("user:read"),
     USER_UPDATE("user:update"),
     USER_CREATE("user:create"),
