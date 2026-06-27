@@ -174,4 +174,34 @@ public enum PermissionName {
         }
         return permissionNames;
     }
+
+    public static final Set<PermissionName> META_PERMISSIONS = Collections.unmodifiableSet(
+            EnumSet.of(
+                    ROLES_READ, ROLES_CREATE, ROLES_DELETE, ROLES_PERMISSIONS_UPDATE,
+                    USER_ROLES_ASSIGN, USER_ROLES_REVOKE
+            )
+    );
+
+    private static final String GRANT_SUFFIX = ":permissions:grant";
+
+    public String getBaseResource() {
+        return value.split(":")[0];
+    }
+
+    public boolean isGrantPermission() {
+        return value.endsWith(GRANT_SUFFIX);
+    }
+
+    /**
+     * Meta-permiso = controla la seguridad misma del sistema. Nunca es delegable,
+     * sin importar cuántos permisos":grant" posea un actor. Se valida por membresía
+     * explícita en META_PERMISSIONS (fuente de verdad) Y por prefijo como red de
+     * seguridad ante futuras adiciones al namespace "roles:" o "user:roles:".
+     */
+    public boolean isMetaPermission() {
+        return META_PERMISSIONS.contains(this)
+                || isGrantPermission()
+                || value.startsWith("roles:")
+                || value.startsWith("user:roles:");
+    }
 }
