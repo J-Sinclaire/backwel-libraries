@@ -11,60 +11,71 @@ import java.util.*;
  * por su valor textual para garantizar que el índice binario asignado a cada permiso sea consistente,
  * determinista y agnóstico al orden de declaración física de las constantes.
  * </p>
- *
- * @version 2.0.0
+ * @version 2.1.0
  */
 public enum PermissionName {
 
-    ROLES_READ("roles:read"),
+    /**
+     * Exclusivo de RRHH para crear roles que incluyen meta-permisos, supeditado a un ROLE OWNER,
+     * intransferible a menos que sea un OWNER quien hace la request*/
+    ROLES_META_CREATE("roles:meta-create"),
+    /**
+     * En presencia de un meta-permiso, permite a administradores de área crear roles subordinados los cuales solo
+     * podrán contener roles dentro del scope de su meta-permiso y jamás incluir meta-permisos*/
     ROLES_CREATE("roles:create"),
+    ROLES_READ("roles:read"),
+    ROLES_UPDATE("roles:update"), // Includes the ability to update role-permissions
     ROLES_DELETE("roles:delete"),
-    ROLES_PERMISSIONS_UPDATE("roles:permissions:update"),
 
-    USER_ROLES_ASSIGN("user:roles:assign"),
-    USER_ROLES_REVOKE("user:roles:revoke"),
+    /**
+     * En presencia de un meta-permiso, permite a administradores de área asignar roles existentes
+     * (el set de permisos del rol designado debe de estar dentro del scope de los meta-permisos del propio
+     * usuario y no puede incluir meta-permisos)*/
+    ROLES_ASSIGN_USER("roles:assign-user"),
 
+    USER_LIST("user:list"),
     USER_READ("user:read"),
     USER_UPDATE("user:update"),
     USER_CREATE("user:create"),
     USER_DELETE("user:delete"),
 
-    CATEGORY_PERMISSIONS_GRANT("category:permissions:grant"),
+    CATEGORY_META_PERMISSIONS_GRANT("category:permissions:grant"),
     CATEGORY_CREATE("category:create"),
     CATEGORY_DELETE("category:delete"),
     CATEGORY_READ("category:read"),
     CATEGORY_UPDATE("category:update"),
 
-    PRODUCT_PERMISSIONS_GRANT("product:permissions:grant"),
+    PRODUCT_META_PERMISSIONS_GRANT("product:permissions:grant"),
     PRODUCT_CREATE("product:create"),
     PRODUCT_DELETE("product:delete"),
     PRODUCT_READ("product:read"),
     PRODUCT_UPDATE("product:update"),
 
-    ITEM_PERMISSIONS_GRANT("item:permissions:grant"),
+    ITEM_META_PERMISSIONS_GRANT("item:permissions:grant"),
     ITEM_CREATE("item:create"),
     ITEM_DELETE("item:delete"),
     ITEM_READ("item:read"),
     ITEM_UPDATE("item:update"),
 
-    STOCK_PERMISSIONS_GRANT("stock:permissions:grant"),
+    STOCK_META_PERMISSIONS_GRANT("stock:permissions:grant"),
     STOCK_READ("stock:read"),
     STOCK_UPDATE("stock:update"),
     STOCK_DELETE("stock:delete"),
 
-    CUPON_PERMISSIONS_GRANT("cupon:permissions:grant"),
+
+    CUPON_META_PERMISSIONS_GRANT("cupon:permissions:grant"),
     CUPON_CREATE("cupon:create"),
     CUPON_DELETE("cupon:delete"),
     CUPON_READ("cupon:read"),
     CUPON_UPDATE("cupon:update"),
 
-    DISCOUNT_PERMISSIONS_GRANT("discount:permissions:grant"),
+    DISCOUNT_META_PERMISSIONS_GRANT("discount:permissions:grant"),
     DISCOUNT_CREATE("discount:create"),
     DISCOUNT_DELETE("discount:delete"),
     DISCOUNT_READ("discount:read"),
     DISCOUNT_UPDATE("discount:update"),
 
-    SALE_PERMISSIONS_GRANT("sale:permissions:grant"),
+    SALE_META_PERMISSIONS_GRANT("sale:permissions:grant"),
     SALE_CREATE("sale:create"),
     SALE_DELETE("sale:delete"),
     SALE_READ("sale:read");
@@ -81,19 +92,8 @@ public enum PermissionName {
         this.value = value;
     }
 
-    /**
-     * Obtiene la cadena de texto descriptiva del permiso.
-     *
-     * @return El formato de cadena {@code recurso:accion}.
-     */
-    public String getValue() {
-        return value;
-    }
-
-    /** Mapa interno que asocia cada constante de permiso con su respectiva posición en el vector binario. */
+    private static final String GRANT_SUFFIX = ":permissions:grant";
     private static final Map<PermissionName, Integer> PERMISSION_TO_INDEX = new HashMap<>();
-
-    /** Arreglo ordenado alfabéticamente por {@code value} que sirve para resolver un permiso desde su índice binario. */
     private static final PermissionName[] INDEX_TO_PERMISSION_NAME;
 
     static {
@@ -106,6 +106,15 @@ public enum PermissionName {
         for (int i = 0; i < sorted.length; i++) {
             PERMISSION_TO_INDEX.put(sorted[i], i);
         }
+    }
+
+    /**
+     * Obtiene la cadena de texto descriptiva del permiso.
+     *
+     * @return El formato de cadena {@code recurso:accion}.
+     */
+    public String getValue() {
+        return value;
     }
 
     /**
@@ -172,17 +181,9 @@ public enum PermissionName {
                 permissionNames.add(fromBitIndex(i));
             }
         }
+
         return permissionNames;
     }
-
-    public static final Set<PermissionName> META_PERMISSIONS = Collections.unmodifiableSet(
-            EnumSet.of(
-                    ROLES_READ, ROLES_CREATE, ROLES_DELETE, ROLES_PERMISSIONS_UPDATE,
-                    USER_ROLES_ASSIGN, USER_ROLES_REVOKE
-            )
-    );
-
-    private static final String GRANT_SUFFIX = ":permissions:grant";
 
     public String getBaseResource() {
         return value.split(":")[0];
@@ -192,16 +193,8 @@ public enum PermissionName {
         return value.endsWith(GRANT_SUFFIX);
     }
 
-    /**
-     * Meta-permiso = controla la seguridad misma del sistema. Nunca es delegable,
-     * sin importar cuántos permisos":grant" posea un actor. Se valida por membresía
-     * explícita en META_PERMISSIONS (fuente de verdad) Y por prefijo como red de
-     * seguridad ante futuras adiciones al namespace "roles:" o "user:roles:".
-     */
+
     public boolean isMetaPermission() {
-        return META_PERMISSIONS.contains(this)
-                || isGrantPermission()
-                || value.startsWith("roles:")
-                || value.startsWith("user:roles:");
+     return isGrantPermission() || value.startsWith("roles:");
     }
 }
