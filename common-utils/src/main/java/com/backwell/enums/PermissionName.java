@@ -94,6 +94,7 @@ public enum PermissionName {
 
     private static final String GRANT_SUFFIX = ":permissions:grant";
     private static final Map<PermissionName, Integer> PERMISSION_TO_INDEX = new HashMap<>();
+    private static final Map<String, PermissionName> VALUE_TO_PERMISSION = new HashMap<>();
     private static final PermissionName[] INDEX_TO_PERMISSION_NAME;
 
     static {
@@ -105,7 +106,9 @@ public enum PermissionName {
 
         for (int i = 0; i < sorted.length; i++) {
             PERMISSION_TO_INDEX.put(sorted[i], i);
+            VALUE_TO_PERMISSION.put(sorted[i].getValue(), sorted[i]);
         }
+
     }
 
     /**
@@ -193,8 +196,24 @@ public enum PermissionName {
         return value.endsWith(GRANT_SUFFIX);
     }
 
-
     public boolean isMetaPermission() {
      return isGrantPermission() || value.startsWith("roles:");
+    }
+
+    /**
+     * Resolves a constant {@link PermissionName} from its string representation.
+     * <p>
+     * This method uses an in-memory indexed search map that guarantees high-performance resolution in constant O(1) time.
+     * </p>
+     *
+     * @param value The text string of the permission (e.g., "user:read").
+     * @return The {@link PermissionName} corresponding to the provided value, wrapped in a {@link Optional}.
+     * Returns {@link Optional#empty()} if the value is null, empty, or does not match any valid permission.
+     */
+    public static Optional<PermissionName> fromString(String value) {
+        if (value == null || value.isBlank()) {
+            return Optional.empty();
+        }
+        return Optional.ofNullable(VALUE_TO_PERMISSION.get(value.trim()));
     }
 }
