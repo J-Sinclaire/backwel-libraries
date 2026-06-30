@@ -11,76 +11,85 @@ import java.util.*;
  * por su valor textual para garantizar que el índice binario asignado a cada permiso sea consistente,
  * determinista y agnóstico al orden de declaración física de las constantes.
  * </p>
- * @version 2.1.0
+ * @version 3.0.0
  */
 public enum PermissionName {
 
     /**
-     * Exclusivo de RRHH para crear roles que incluyen meta-permisos, supeditado a un ROLE OWNER,
-     * intransferible a menos que sea un OWNER quien hace la request*/
-    ROLES_META_CREATE("roles:meta-create"),
-    /**
-     * En presencia de un meta-permiso, permite a administradores de área crear roles subordinados los cuales solo
-     * podrán contener roles dentro del scope de su meta-permiso y jamás incluir meta-permisos*/
+     * Por si mismo, no confiere ninguna acción, su uso es estricto en compañía de permisos de roles
+     * y en presencia de un permiso de jurisdicción que limite su dominio.
+     *
+     * <p> En presencia de #{ROLES_CREATE} concede la posibilidad de incluir permisos jurisdiccionales y metapermisos de rol.
+     * Los permisos jurisdiccionales admisibles deberán estár contenidos dentro de los permisos del actor,
+     * ya sea especificando un conjunto de jurisdiccionales
+     * En presencia de ROLES_UPDATE concede la posibilidad*/
+    ROLES_META_PERMISSION("roles:meta:permission"),
+
+
+
+    // Requieren forzosamene de un control de área que regule su dominio o el meta permissions que tiene
+    // dominio sobre todas las áreas del sistema y control sobre los metapermisos
+    /** En presencia de un Control de Área, permite crear roles subordinados dentro de ese dominio. */
     ROLES_CREATE("roles:create"),
     ROLES_READ("roles:read"),
     ROLES_UPDATE("roles:update"), // Includes the ability to update role-permissions
     ROLES_DELETE("roles:delete"),
-
-    /**
-     * En presencia de un meta-permiso, permite a administradores de área asignar roles existentes
-     * (el set de permisos del rol designado debe de estar dentro del scope de los meta-permisos del propio
-     * usuario y no puede incluir meta-permisos)*/
     ROLES_ASSIGN_USER("roles:assign-user"),
 
+    // =========================================================================
+    // PERMISOS OPERATIVOS (Acciones sobre recursos del negocio)
+    // =========================================================================
     USER_LIST("user:list"),
     USER_READ("user:read"),
     USER_UPDATE("user:update"),
     USER_CREATE("user:create"),
     USER_DELETE("user:delete"),
 
-    CATEGORY_META_PERMISSIONS_GRANT("category:permissions:grant"),
+    // =================================================================================
+    // CONTROLES DE ÁREA (Delimitadores de Dominio - No ejecutan acciones por sí mismos)
+    // =================================================================================
+    CATEGORY_JURISDICTION("category:jurisdiction"),
     CATEGORY_CREATE("category:create"),
     CATEGORY_DELETE("category:delete"),
     CATEGORY_READ("category:read"),
     CATEGORY_UPDATE("category:update"),
 
-    PRODUCT_META_PERMISSIONS_GRANT("product:permissions:grant"),
+    PRODUCT_JURISDICTION("product:jurisdiction"),
     PRODUCT_CREATE("product:create"),
     PRODUCT_DELETE("product:delete"),
     PRODUCT_READ("product:read"),
     PRODUCT_UPDATE("product:update"),
 
-    ITEM_META_PERMISSIONS_GRANT("item:permissions:grant"),
+    ITEM_JURISDICTION("item:jurisdiction"),
     ITEM_CREATE("item:create"),
     ITEM_DELETE("item:delete"),
     ITEM_READ("item:read"),
     ITEM_UPDATE("item:update"),
 
-    STOCK_META_PERMISSIONS_GRANT("stock:permissions:grant"),
+    STOCK_JURISDICTION("stock:jurisdiction"),
     STOCK_READ("stock:read"),
     STOCK_UPDATE("stock:update"),
     STOCK_DELETE("stock:delete"),
 
 
-    CUPON_META_PERMISSIONS_GRANT("cupon:permissions:grant"),
+    CUPON_JURISDICTION("cupon:jurisdiction"),
     CUPON_CREATE("cupon:create"),
     CUPON_DELETE("cupon:delete"),
     CUPON_READ("cupon:read"),
     CUPON_UPDATE("cupon:update"),
 
-    DISCOUNT_META_PERMISSIONS_GRANT("discount:permissions:grant"),
+    DISCOUNT_JURISDICTION("discount:jurisdiction"),
     DISCOUNT_CREATE("discount:create"),
     DISCOUNT_DELETE("discount:delete"),
     DISCOUNT_READ("discount:read"),
     DISCOUNT_UPDATE("discount:update"),
 
-    SALE_META_PERMISSIONS_GRANT("sale:permissions:grant"),
+    SALE_JURISDICTION("sale:jurisdiction"),
     SALE_CREATE("sale:create"),
     SALE_DELETE("sale:delete"),
     SALE_READ("sale:read");
 
-    /** El valor en formato String del permiso (ej. "user:read"). */
+    /** El valor en formato String del permiso (ej. "<resourceNamespace>:<action>"). */
     private final String value;
 
     /**
@@ -92,7 +101,7 @@ public enum PermissionName {
         this.value = value;
     }
 
-    private static final String GRANT_SUFFIX = ":permissions:grant";
+    private static final String JURISDICTION_SUFFIX = ":jurisdiction";
     private static final Map<PermissionName, Integer> PERMISSION_TO_INDEX = new HashMap<>();
     private static final Map<String, PermissionName> VALUE_TO_PERMISSION = new HashMap<>();
     private static final PermissionName[] INDEX_TO_PERMISSION_NAME;
@@ -192,13 +201,18 @@ public enum PermissionName {
         return value.split(":")[0];
     }
 
-    public boolean isGrantPermission() {
-        return value.endsWith(GRANT_SUFFIX);
+    public boolean isJurisdictionRole() {
+        return this.value.endsWith(JURISDICTION_SUFFIX);
+    }
+    public boolean isMetaPermission(){
+        return this == ROLES_META_PERMISSION;
     }
 
-    public boolean isMetaPermission() {
-     return isGrantPermission() || value.startsWith("roles:");
+    public boolean isActionMetaPermission() {
+        return this.value.startsWith("roles:") && this != ROLES_META_PERMISSION;
     }
+
+
 
     /**
      * Resolves a constant {@link PermissionName} from its string representation.
@@ -216,4 +230,6 @@ public enum PermissionName {
         }
         return Optional.ofNullable(VALUE_TO_PERMISSION.get(value.trim()));
     }
+
+
 }
