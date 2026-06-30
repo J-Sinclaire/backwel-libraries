@@ -201,7 +201,7 @@ public enum PermissionName {
         return value.split(":")[0];
     }
 
-    public boolean isJurisdictionRole() {
+    public boolean isJurisdiction() {
         return this.value.endsWith(JURISDICTION_SUFFIX);
     }
     public boolean isMetaPermission(){
