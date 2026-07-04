@@ -43,4 +43,47 @@ public class EmailRequestDTO implements Serializable {
     public Map<String, Object> getVariables() {
         return variables;
     }
+
+    private EmailRequestDTO(Builder builder) {
+        this.to = builder.to;
+        this.subject = builder.subject;
+        this.templateName = builder.templateName;
+        this.variables = builder.variables;
+    }
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    /* Fluent API Builder*/
+    public static class Builder {
+        private String to;
+        private String subject;
+        private String templateName;
+        private Map<String, Object> variables;
+
+        public Builder() {}
+
+        public Builder to(String to) {
+            this.to = to;
+            return this;
+        }
+        public Builder subject(String subject) {
+            this.subject = subject;
+            return this;
+        }
+        public Builder templateName(String templateName) {
+            this.templateName = templateName;
+            return this;
+        }
+
+        public Builder variables(Map<String, Object> variables) {
+            this.variables = variables;
+            return this;
+        }
+        public EmailRequestDTO build() {
+            return new EmailRequestDTO(this);
+        }
+
+    }
 }
