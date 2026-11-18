@@ -2,6 +2,7 @@ package com.backwell.enums;
 
 import java.util.*;
 
+
 /**
  * Define los permisos granulares del sistema basados en recursos y acciones mediante
  * el formato {@code recurso:accion}.
@@ -12,7 +13,10 @@ import java.util.*;
  * determinista y agnóstico al orden de declaración física de las constantes.
  * </p>
  * @version 3.0.0
+ * @deprecated
+ * @see com.backwell.enums.permission.PermissionName
  */
+@Deprecated(forRemoval = true)
 public enum PermissionName {
 
     /**
