@@ -1,5 +1,7 @@
 package com.backwell.enums.permission;
 
+import com.backwell.authorization.RoleMask;
+
 import java.util.*;
 
 public enum PermissionName {
@@ -251,9 +253,20 @@ public enum PermissionName {
         return result;
     }
 
+    public static RoleMask buildMask(Collection<PermissionName> permissions) {
+        byte[] bytes = toByteArray(permissions);
+        String base64 = toBase64BitMask(bytes);
+        return new RoleMask(bytes, base64);
+    }
+
+    private static String toBase64BitMask(byte[] bytes) {
+        Objects.requireNonNull(bytes, "Raw bytes must not be null.");
+        return bytes.length == 0 ? "" : B64_ENCODER.encodeToString(bytes);
+    }
+
     public static String toBase64BitMask(Collection<PermissionName> permissions) {
         byte[] bytes = toByteArray(permissions);
-        return bytes.length == 0 ? "" : B64_ENCODER.encodeToString(bytes);
+        return toBase64BitMask(bytes);
     }
 
     public static byte[] decodeBase64ToBytes(String base64Bitmask) {
