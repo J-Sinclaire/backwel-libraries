@@ -67,6 +67,7 @@ public enum PermissionName {
     SALE_DELETE(ResourceType.SALE, ActionType.DELETE, 42),
     SALE_READ(ResourceType.SALE, ActionType.READ, 43);
 
+    private static final byte[] ALL_PERMISSIONS_MASK;
     private static final byte[] EMPTY_MASK = new byte[0];
     private static final Base64.Encoder B64_ENCODER = Base64.getUrlEncoder().withoutPadding();
     private static final Base64.Decoder B64_DECODER = Base64.getUrlDecoder();
@@ -113,11 +114,18 @@ public enum PermissionName {
 
         matrix.replaceAll((res, actMap) -> Collections.unmodifiableMap(actMap));
 
+
         INDEX_TO_PERMISSION = indexArray;
         VALUE_TO_PERMISSION = Map.copyOf(valueMap);
         MATRIX = Collections.unmodifiableMap(matrix);
         RESOURCE_JURISDICTIONS = Collections.unmodifiableMap(jurisdictions);
         BYTE_ARRAY_SIZE = (maxIndex >>> 3) + 1;
+
+        byte[] allMask = new byte[BYTE_ARRAY_SIZE];
+        for (PermissionName p : all) {
+            allMask[p.byteOffset] |= p.bitMask;
+        }
+        ALL_PERMISSIONS_MASK = allMask;
     }
 
     private final ResourceType resource;
@@ -173,6 +181,10 @@ public enum PermissionName {
      */
     public Optional<PermissionName> getRequiredJurisdiction() {
         return Optional.ofNullable(RESOURCE_JURISDICTIONS.get(this.resource));
+    }
+
+    public static byte[] getAllPermissionsMask(){
+        return ALL_PERMISSIONS_MASK.clone();
     }
 
     /**
@@ -285,6 +297,48 @@ public enum PermissionName {
     // =========================================================================
     // OPERACIONES MASIVAS A NIVEL DE BITS (Zero-Allocation en lectura)
     // =========================================================================
+
+    /**
+     * Compara semánticamente dos máscaras de permisos a nivel de bits.
+     * Ignora bytes en cero al final y considera equivalentes {@code null},
+     * arreglos vacíos y arreglos compuestos únicamente por ceros.
+     *
+     * @param maskA Primera máscara.
+     * @param maskB Segunda máscara.
+     * @return {@code true} si ambas máscaras representan exactamente los mismos permisos activos.
+     */
+    public static boolean equals(byte[] maskA, byte[] maskB) {
+        if (maskA == maskB) {
+            return true;
+        }
+
+        int lenA = (maskA == null) ? 0 : maskA.length;
+        int lenB = (maskB == null) ? 0 : maskB.length;
+        int commonLen = Math.min(lenA, lenB);
+
+        // 1. Compara la porción compartida
+        for (int i = 0; i < commonLen; i++) {
+            if (maskA[i] != maskB[i]) {
+                return false;
+            }
+        }
+
+        // 2. Si maskA es más largo, sus bytes excedentes deben ser 0
+        for (int i = commonLen; i < lenA; i++) {
+            if (maskA[i] != 0) {
+                return false;
+            }
+        }
+
+        // 3. Si maskB es más largo, sus bytes excedentes deben ser 0
+        for (int i = commonLen; i < lenB; i++) {
+            if (maskB[i] != 0) {
+                return false;
+            }
+        }
+
+        return true;
+    }
 
     /**
      * Verifica si {@code userMask} contiene TODOS los bits encendidos en {@code requiredMask}.
